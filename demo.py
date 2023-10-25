@@ -1,8 +1,6 @@
 import os
 import re
-import json
 import openai
-from copy import deepcopy
 
 import chainlit as cl
 from chainlit.input_widget import Slider
@@ -75,7 +73,7 @@ async def on_regenerate_actions(action):
         regenerate_answer =  cl.Message(author="重新生成", content="", language="str", indent=1)
         async for stream_resp in await openai.ChatCompletion.acreate(
             model=model_name,
-            messages= message_history + [{"role": "user", "content": content}],
+            messages= message_history[:-1] + [{"role": "user", "content": content}],
             stream=True,
             temperature = 1.0,
             max_tokens = int(chat_settings["max_tokens"]),
@@ -87,6 +85,7 @@ async def on_regenerate_actions(action):
 
         cl.user_session.set("regenerate_answer", regenerate_answer)
         await regenerate_answer.send()
+
 
     else:
         cl.ErrorMessage(content="Invalid action").send()
@@ -153,11 +152,7 @@ async def main(message: str):
         await current_answer.stream_token(token)
 
     message_history.append({"role": "assistant", "content": current_answer.content})
-
+    
     cl.user_session.set("current_answer", current_answer)
     await current_answer.send()
-
-
-
-    
     
